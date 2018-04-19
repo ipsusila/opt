@@ -396,6 +396,46 @@ func (o *Options) GetDuration(key string, def time.Duration) time.Duration {
 	}
 }
 
+//GetObjectArray returns options in object form
+func (o *Options) GetObjectArray(key string) []*Options {
+	/*
+		//assume the value is an object
+		vMap, ok := val.(map[string]interface{})
+		if !ok {
+			return New()
+		}
+
+		newOpt := &Options{options: vMap}
+		return newOpt
+	*/
+
+	o.RLock()
+	defer o.RUnlock()
+
+	container, key := o.getContainer(key)
+	val, ok := container[key]
+	if !ok {
+		return nil
+	}
+
+	va, ok := val.([]interface{})
+	if !ok {
+		return nil
+	}
+
+	res := []*Options{}
+	for _, val := range va {
+		if v, ok := val.(map[string]interface{}); ok {
+			newOpt := &Options{
+				options: v,
+			}
+			res = append(res, newOpt)
+		}
+	}
+
+	return res
+}
+
 func (o *Options) GetInt64Array(key string) []int64 {
 	o.RLock()
 	defer o.RUnlock()
