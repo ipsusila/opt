@@ -298,6 +298,22 @@ func (o *Options) Format(optDelim string) string {
 	return text
 }
 
+//AsStruct method convert configuration contents to struct.
+//Process: options -> JSON -> struct
+func (o *Options) AsStruct(out interface{}) error {
+	stream, err := json.Marshal(o.options)
+	if err != nil {
+		return err
+	}
+
+	//convert to struct
+	err = json.Unmarshal(stream, out)
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 //AsJSON dump content as JSON
 func (o *Options) AsJSON() string {
 	stream, err := json.MarshalIndent(o.options, "", "  ")
