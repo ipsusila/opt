@@ -82,6 +82,8 @@ func FromReader(reader io.Reader, format string) (*Options, error) {
 		}
 		o := &Options{}
 		o.Assign(data)
+
+		return o, nil
 	}
 
 	return nil, errors.Errorf("Not supported options format %s", format)
@@ -369,6 +371,7 @@ func (o *Options) GetString(key, def string) string {
 	return o.asText(val)
 }
 
+//GetDuration returns options as time.Duration
 func (o *Options) GetDuration(key string, def time.Duration) time.Duration {
 	o.RLock()
 	defer o.RUnlock()
@@ -452,6 +455,7 @@ func (o *Options) GetObjectArray(key string) []*Options {
 	return res
 }
 
+//GetInt64Array returns array of integer
 func (o *Options) GetInt64Array(key string) []int64 {
 	o.RLock()
 	defer o.RUnlock()
@@ -504,6 +508,7 @@ func (o *Options) GetInt64Array(key string) []int64 {
 	return res
 }
 
+//GetFloat64Array returns option as float64 array
 func (o *Options) GetFloat64Array(key string) []float64 {
 	o.RLock()
 	defer o.RUnlock()
