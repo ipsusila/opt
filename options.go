@@ -59,6 +59,29 @@ func New() *Options {
 	return opt
 }
 
+func convMap(vMap map[interface{}]interface{}, to map[string]interface{}) {
+	for key, val := range vMap {
+		vm, ok := val.(map[interface{}]interface{})
+		if ok {
+			m := make(map[string]interface{})
+			convMap(vm, m)
+			val = m
+		}
+		str := fmt.Sprintf("%v", key)
+		to[str] = val
+	}
+}
+
+//NewMap Create options with map
+func NewMap(vMap map[interface{}]interface{}) *Options {
+	opt := &Options{}
+	m := make(map[string]interface{})
+	convMap(vMap, m)
+	opt.Assign(m)
+
+	return opt
+}
+
 //FromReader create options from IO reader
 func FromReader(reader io.Reader, format string) (*Options, error) {
 	content, err := ioutil.ReadAll(reader)
