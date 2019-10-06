@@ -118,6 +118,44 @@ func FromText(cfgText string, format string) (*Options, error) {
 	return FromReader(reader, format)
 }
 
+// ToFile saves configuration to file
+func ToFile(op *Options, filePath, format string) error {
+	ext := ""
+	if len(format) == 0 {
+		ext = strings.Trim(path.Ext(filePath), ".")
+	} else {
+		ext = format
+	}
+	ext = strings.ToLower(ext)
+	if ext != FormatJSON && ext != FormatHJSON {
+		return errors.New("unsupported format " + ext)
+	}
+
+	// open configuration
+	f, err := os.Create(filePath)
+	if err != nil {
+		return errors.Wrapf(err, "failed to create file %s", filePath)
+	}
+	defer f.Close()
+
+	switch ext {
+	case FormatHJSON:
+		js, err := hjson.Marshal(op.options)
+		if err != nil {
+			return err
+		}
+		_, err = f.Write(js)
+	case FormatJSON:
+		js, err := json.MarshalIndent(op.options, "", "  ")
+		if err != nil {
+			return err
+		}
+		_, err = f.Write(js)
+	}
+
+	return nil
+}
+
 //FromFile read options from given file
 func FromFile(filePath string, format string) (*Options, error) {
 	ext := ""
@@ -269,6 +307,39 @@ func (o *Options) escape(val interface{}) string {
 	}
 
 	return string(rbuf[:rp])
+}
+
+// EqualTo returns true if two configuration is equal
+func (o *Options) EqualTo(op *Options) bool {
+	if o == op {
+		return true
+	}
+	if op == nil {
+		return o == nil
+	}
+
+	// convert to json
+	js1, err := json.Marshal(o.options)
+	if err != nil {
+		return false
+	}
+	js2, err := json.Marshal(op.options)
+	if err != nil {
+		return false
+	}
+
+	n1 := len(js1)
+	n2 := len(js2)
+	if n1 != n2 {
+		return false
+	}
+
+	for i := 0; i < n1; i++ {
+		if js1[i] != js2[i] {
+			return false
+		}
+	}
+	return true
 }
 
 //String converts options to string
