@@ -61,11 +61,19 @@ func (cfg *Configurator) sourceChanged(f int) error {
 		return errors.New("loaded configuration return <nil>")
 	}
 
-	if !newCfg.EqualTo(cfg.lastCfg) {
-		cfg.lastCfg = newCfg
-		for _, item := range cfg.items {
-			item.conf.Configure(newCfg.Get(item.section), false)
+	// if configuration for given section is changed,
+	// broadcast the change to `Configurable` item
+	changed := false
+	for _, item := range cfg.items {
+		newOpt := newCfg.Get(item.section)
+		oldOpt := cfg.lastCfg.Get(item.section)
+		if !newOpt.EqualTo(oldOpt) {
+			changed = true
+			item.conf.Configure(newOpt, false)
 		}
+	}
+	if changed {
+		cfg.lastCfg = newCfg
 	}
 
 	return nil
