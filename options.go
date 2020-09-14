@@ -419,6 +419,67 @@ func (o *Options) AsJSON() string {
 	return string(stream)
 }
 
+// AsPrettyJSON convert to JSON with given indent
+func (o *Options) AsPrettyJSON(indent int) ([]byte, error) {
+	strIndent := ""
+	for i := 0; i < indent; i++ {
+		strIndent += " "
+	}
+	return json.MarshalIndent(o.options, "", strIndent)
+}
+
+func (o *Options) expandTo(vSrc map[string]interface{}, vMap map[string]interface{}) {
+	for key, val := range vSrc {
+		if vm, ok := val.(map[string]interface{}); ok {
+			newMap := make(map[string]interface{})
+			vMap[key] = newMap
+			o.expandTo(vm, newMap)
+		} else if vs, ok := val.(string); ok {
+			if strings.HasPrefix(vs, "@") {
+				filename := o.getPath(vs)
+				op, err := FromFile(filename, FormatAuto)
+				if err == nil {
+					newMap := make(map[string]interface{})
+					vMap[key] = newMap
+					o.expandTo(op.options, newMap)
+				}
+			} else {
+				vMap[key] = val
+			}
+		} else {
+			vMap[key] = val
+		}
+	}
+
+	/*
+		if vm, ok := v.(map[string]interface{}); ok {
+			vMap[key] = make(map[string]interface{})
+			for ky, vl := range vm {
+				if strings.HasPrefix(ky, "@") {
+					fileName := o.getPath(ky)
+					op, err := FromFile(fileName, FormatAuto)
+					if err != nil {
+						vMap[key] = op.options
+
+					}
+				}
+			}
+		}
+	*/
+}
+
+// ExpandAll expand linked properties and return it as map
+func (o *Options) ExpandAll() map[string]interface{} {
+	o.RLock()
+	defer o.RUnlock()
+
+	vMap := make(map[string]interface{})
+	o.expandTo(o.options, vMap)
+	o.options = vMap
+
+	return vMap
+}
+
 //GetStringArray returns array of string
 func (o *Options) GetStringArray(key string) []string {
 	o.RLock()
